@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>m ↔ ft″ Converter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f1117;
+    --surface:  #181c27;
+    --border:   #252a38;
+    --accent:   #4f8ef7;
+    --accent2:  #a78bfa;
+    --text:     #e4e8f0;
+    --muted:    #6b7280;
+    --result:   #c8d8ff;
+    --ok:       #34d399;
+    --err:      #f87171;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); }
+  .logo .sep { color: var(--muted); margin: 0 0.3em; }
+  .tagline {
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 0.4rem;
+    font-family: var(--mono);
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 520px;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Input group ── */
+  .input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-bottom: 1.5rem;
+  }
+  .input-group input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 1.15rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .input-group input:focus {
+    border-color: var(--accent);
+  }
+  .input-group input::placeholder { color: var(--muted); font-size: 0.9rem; }
+  .unit-badge {
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 0 8px 8px 0;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  /* ft+in row */
+  .ft-in-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .ft-in-row .input-group { margin-bottom: 0; }
+
+  /* ── Convert button ── */
+  .btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.08s;
+  }
+  .btn:hover { background: #6aa0ff; }
+  .btn:active { transform: scale(0.98); }
+
+  /* ── Result ── */
+  .result-block {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+    display: none;
+  }
+  .result-block.visible { display: block; }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.6rem;
+    gap: 0.5rem;
+  }
+  .result-key {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .result-val {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    color: var(--result);
+    font-weight: 500;
+    text-align: right;
+    word-break: break-all;
+  }
+  .result-val.big {
+    font-size: 1.45rem;
+    color: var(--ok);
+  }
+
+  .copy-hint {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 0.4rem;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+  }
+  .copy-hint:hover { color: var(--accent); }
+
+  /* error */
+  .err-msg {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--err);
+    margin-top: 0.75rem;
+    display: none;
+  }
+  .err-msg.visible { display: block; }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 2rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+
+  /* mobile */
+  @media (max-width: 400px) {
+    .card { padding: 1.4rem 1rem; }
+    .result-val { font-size: 0.95rem; }
+    .result-val.big { font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">m<span>↔</span>ft<span class="sep">/</span>in</div>
+  <div class="tagline">Metric · Imperial · Daily Use</div>
+</header>
+
+<!-- ══════════ CARD 1: m → ft″ ══════════ -->
+<div class="card">
+  <div class="card-label">Metres → Feet &amp; Inches</div>
+
+  <div class="input-group">
+    <input type="number" id="m-input" placeholder="e.g. 1.65" step="any" inputmode="decimal" autofocus>
+    <div class="unit-badge">m</div>
+  </div>
+
+  <button class="btn" onclick="convertMtoFt()">Convert →</button>
+
+  <div class="err-msg" id="m-err">Enter a valid number (e.g. 1.65)</div>
+
+  <div class="result-block" id="m-result">
+    <div class="result-row">
+      <span class="result-key">Decimal inches</span>
+      <span class="result-val big" id="m-r1">—</span>
+    </div>
+    <div class="result-row">
+      <span class="result-key">Fractional (n/8)</span>
+      <span class="result-val big" id="m-r2">—</span>
+    </div>
+    <div class="result-row" style="margin-top:0.75rem">
+      <span class="result-key">Total inches</span>
+      <span class="result-val" id="m-r3">—</span>
+    </div>
+    <div class="result-row">
+      <span class="result-key">Total feet (decimal)</span>
+      <span class="result-val" id="m-r4">—</span>
+    </div>
+    <div class="copy-hint" onclick="copyResults('m')">⎘ copy results</div>
+  </div>
+</div>
+
+<!-- ══════════ CARD 2: ft″ → m ══════════ -->
+<div class="card">
+  <div class="card-label">Feet &amp; Inches → Metres</div>
+
+  <div class="ft-in-row">
+    <div class="input-group">
+      <input type="number" id="ft-input" placeholder="0" step="1" min="0" inputmode="numeric">
+      <div class="unit-badge">ft</div>
+    </div>
+    <div class="input-group">
+      <input type="number" id="in-input" placeholder="0" step="any" min="0" inputmode="decimal">
+      <div class="unit-badge">in</div>
+    </div>
+  </div>
+
+  <button class="btn" onclick="convertFtToM()">Convert →</button>
+
+  <div class="err-msg" id="ft-err">Enter at least one value (feet or inches).</div>
+
+  <div class="result-block" id="ft-result">
+    <div class="result-row">
+      <span class="result-key">Metres</span>
+      <span class="result-val big" id="ft-r1">—</span>
+    </div>
+    <div class="result-row">
+      <span class="result-key">Centimetres</span>
+      <span class="result-val" id="ft-r2">—</span>
+    </div>
+    <div class="result-row">
+      <span class="result-key">Millimetres</span>
+      <span class="result-val" id="ft-r3">—</span>
+    </div>
+    <div class="copy-hint" onclick="copyResults('ft')">⎘ copy results</div>
+  </div>
+</div>
+
+<footer>1 in = 25.4 mm exactly · 1 ft = 0.3048 m exactly</footer>
+
+<script>
+// ── Precision arithmetic using JS numbers but clamped to sane decimals ──
+
+const IN_PER_M  = 39.3700787402;   // inches per metre (exact: 1/0.0254)
+const M_PER_IN  = 0.0254;          // metres per inch  (exact)
+const IN_PER_FT = 12;
+
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+function round(n, dp) { return Math.round(n * 10**dp) / 10**dp; }
+
+// Format feet+inches in both styles
+function formatFtIn(meters) {
+  const totalIn = meters * IN_PER_M;
+  const feet    = Math.floor(totalIn / 12);
+  const inches  = totalIn - feet * 12;
+
+  // --- Format 1: decimal inches ---
+  const inDec = round(inches, 3);
+  const f1 = `${feet}′ ${inDec}″`;
+
+  // --- Format 2: fractional (n/8) ---
+  const eighths = round(inches * 8, 3);
+  const wholeIn = Math.floor(inches);
+  const fracEighths = round(eighths - wholeIn * 8, 3);
+
+  const fracInt  = Math.round(fracEighths);
+  const isExact  = Math.abs(fracEighths - Math.round(fracEighths)) < 0.001;
+
+  let fracStr;
+  if (isExact && fracInt === 0) {
+    fracStr = `${feet}′ ${wholeIn}″`;
+  } else if (isExact) {
+    const g   = gcd(fracInt, 8);
+    const num = fracInt / g;
+    const den = 8 / g;
+    if (den === 1) {
+      fracStr = `${feet}′ ${wholeIn + num}″`;
+    } else if (wholeIn === 0) {
+      fracStr = `${feet}′ (${num}/${den})″`;
+    } else {
+      fracStr = `${feet}′ ${wholeIn}(${num}/${den})″`;
+    }
+  } else {
+    // not an exact eighth — show decimal numerator
+    const frac3 = round(fracEighths, 3);
+    if (wholeIn === 0) {
+      fracStr = `${feet}′ (${frac3}/8)″`;
+    } else {
+      fracStr = `${feet}′ ${wholeIn}(${frac3}/8)″`;
+    }
+  }
+
+  const totalInRound  = round(totalIn, 4);
+  const totalFtRound  = round(totalIn / 12, 5);
+
+  return { f1, f2: fracStr, totalIn: totalInRound, totalFt: totalFtRound };
+}
+
+// ── Card 1 ──
+function convertMtoFt() {
+  const val = document.getElementById('m-input').value.trim();
+  const errEl = document.getElementById('m-err');
+  const resEl = document.getElementById('m-result');
+
+  if (val === '' || isNaN(Number(val))) {
+    errEl.classList.add('visible');
+    resEl.classList.remove('visible');
+    return;
+  }
+  errEl.classList.remove('visible');
+
+  const m = parseFloat(val);
+  if (m < 0) {
+    errEl.textContent = 'Enter a non-negative value.';
+    errEl.classList.add('visible');
+    resEl.classList.remove('visible');
+    return;
+  }
+  errEl.textContent = 'Enter a valid number (e.g. 1.65)';
+
+  const { f1, f2, totalIn, totalFt } = formatFtIn(m);
+  document.getElementById('m-r1').textContent = f1;
+  document.getElementById('m-r2').textContent = f2;
+  document.getElementById('m-r3').textContent = totalIn + ' in';
+  document.getElementById('m-r4').textContent = totalFt + ' ft';
+  resEl.classList.add('visible');
+}
+
+// ── Card 2 ──
+function convertFtToM() {
+  const ftVal = document.getElementById('ft-input').value.trim();
+  const inVal = document.getElementById('in-input').value.trim();
+  const errEl = document.getElementById('ft-err');
+  const resEl = document.getElementById('ft-result');
+
+  if (ftVal === '' && inVal === '') {
+    errEl.classList.add('visible');
+    resEl.classList.remove('visible');
+    return;
+  }
+  errEl.classList.remove('visible');
+
+  const ft = ftVal === '' ? 0 : parseFloat(ftVal);
+  const inn = inVal === '' ? 0 : parseFloat(inVal);
+
+  if (isNaN(ft) || isNaN(inn) || ft < 0 || inn < 0) {
+    errEl.textContent = 'Enter valid non-negative numbers.';
+    errEl.classList.add('visible');
+    resEl.classList.remove('visible');
+    return;
+  }
+  errEl.textContent = 'Enter at least one value (feet or inches).';
+
+  const totalInches = ft * IN_PER_FT + inn;
+  const metres = totalInches * M_PER_IN;
+
+  document.getElementById('ft-r1').textContent = round(metres, 4) + ' m';
+  document.getElementById('ft-r2').textContent = round(metres * 100, 3) + ' cm';
+  document.getElementById('ft-r3').textContent = round(metres * 1000, 2) + ' mm';
+  resEl.classList.add('visible');
+}
+
+// ── Copy ──
+function copyResults(which) {
+  let text;
+  if (which === 'm') {
+    const r1 = document.getElementById('m-r1').textContent;
+    const r2 = document.getElementById('m-r2').textContent;
+    const r3 = document.getElementById('m-r3').textContent;
+    const r4 = document.getElementById('m-r4').textContent;
+    const mv = document.getElementById('m-input').value;
+    text = `${mv} m\nDecimal  : ${r1}\nFractional: ${r2}\nTotal in : ${r3}\nTotal ft : ${r4}`;
+  } else {
+    const ft = document.getElementById('ft-input').value || '0';
+    const inn = document.getElementById('in-input').value || '0';
+    const r1 = document.getElementById('ft-r1').textContent;
+    const r2 = document.getElementById('ft-r2').textContent;
+    const r3 = document.getElementById('ft-r3').textContent;
+    text = `${ft}′ ${inn}″\nMetres : ${r1}\nCm     : ${r2}\nMm     : ${r3}`;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const hints = document.querySelectorAll('.copy-hint');
+    hints.forEach(h => {
+      const orig = h.textContent;
+      h.textContent = '✓ copied';
+      setTimeout(() => h.textContent = orig, 1500);
+    });
+  });
+}
+
+// ── Enter key support ──
+document.getElementById('m-input').addEventListener('keydown', e => { if (e.key === 'Enter') convertMtoFt(); });
+document.getElementById('ft-input').addEventListener('keydown', e => { if (e.key === 'Enter') convertFtToM(); });
+document.getElementById('in-input').addEventListener('keydown', e => { if (e.key === 'Enter') convertFtToM(); });
+
+// ── Live conversion as you type ──
+document.getElementById('m-input').addEventListener('input', () => {
+  if (document.getElementById('m-input').value.trim() !== '') convertMtoFt();
+});
+document.getElementById('ft-input').addEventListener('input', () => {
+  const f = document.getElementById('ft-input').value;
+  const i = document.getElementById('in-input').value;
+  if (f !== '' || i !== '') convertFtToM();
+});
+document.getElementById('in-input').addEventListener('input', () => {
+  const f = document.getElementById('ft-input').value;
+  const i = document.getElementById('in-input').value;
+  if (f !== '' || i !== '') convertFtToM();
+});
+</script>
+</body>
+</html>
